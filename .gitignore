@@ -1,15 +1,17 @@
-# Python-generated files
+# Python bytecode and build artifacts
 __pycache__/
-*.py[oc]
+*.py[cod]
+*.egg-info/
 build/
 dist/
 wheels/
-*.egg-info
 
-# Virtual environments
-.venv
+# Virtual environment
+.venv/
 
-data/images/*
-data/videos/*
-data/.DS_Store
-notebooks/.DS_Store
+# OS-specific files
+.DS_Store
+
+# Data and notebooks
+data/images/
+data/videos/
