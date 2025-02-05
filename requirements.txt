@@ -1,0 +1,7 @@
+requests
+transformers
+torchvision
+pillow # to handle images
+yt_dlp # download videos
+ffmpeg # needed for yt_dlp
+tqdm
