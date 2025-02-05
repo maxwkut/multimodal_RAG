@@ -9,7 +9,7 @@ wheels/
 # Virtual environments
 .venv
 
-data/images
-data/videos
+data/images/*
+data/videos/*
 data/.DS_Store
 notebooks/.DS_Store
