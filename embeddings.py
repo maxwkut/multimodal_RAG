@@ -2,6 +2,7 @@ from transformers import CLIPProcessor, CLIPModel
 from PIL import Image
 import torch
 
+
 def get_joint_embedding(image_path: str, text: str):
     # Preprocessing
     image = Image.open(image_path)
@@ -16,8 +17,9 @@ def get_joint_embedding(image_path: str, text: str):
 
     return joint_embedding
 
-if __name__=="__main__":
+
+if __name__ == "__main__":
     clip_model = CLIPModel.from_pretrained("openai/clip-vit-base-patch32")
     clip_processor = CLIPProcessor.from_pretrained("openai/clip-vit-base-patch32")
 
-    #get_joint_embedding(args)
+    # get_joint_embedding(args)
