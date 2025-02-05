@@ -1,3 +1,7 @@
+
+import cv2
+
+
 def get_video_id_from_url(video_url):
     import urllib.parse
 

@@ -1,31 +1,32 @@
-import gradio as gr
+import dataclasses
 import io
+import os
 import sys
 import time
-import dataclasses
+from enum import Enum, auto
 from pathlib import Path
-import os
-from enum import auto, Enum
-from typing import List, Tuple, Any
-from utils import prediction_guard_llava_conv
+from typing import Any, List, Tuple
+
+import gradio as gr
 import lancedb
-from utils import load_json_file
-from mm_rag.embeddings.bridgetower_embeddings import BridgeTowerEmbeddings
-from mm_rag.vectorstores.multimodal_lancedb import MultimodalLanceDB
-from mm_rag.MLM.client import PredictionGuardClient
-from mm_rag.MLM.lvlm import LVLM
-from PIL import Image
 from langchain_core.runnables import (
+    RunnableLambda,
     RunnableParallel,
     RunnablePassthrough,
-    RunnableLambda,
 )
+from mm_rag.embeddings.bridgetower_embeddings import BridgeTowerEmbeddings
+from mm_rag.MLM.client import PredictionGuardClient
+from mm_rag.MLM.lvlm import LVLM
+from mm_rag.vectorstores.multimodal_lancedb import MultimodalLanceDB
 from moviepy.video.io.VideoFileClip import VideoFileClip
+from PIL import Image
+
 from utils import (
-    prediction_guard_llava_conv,
-    encode_image,
     Conversation,
+    encode_image,
+    load_json_file,
     lvlm_inference_with_conversation,
+    prediction_guard_llava_conv,
 )
 
 server_error_msg = (

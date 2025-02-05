@@ -1,13 +1,14 @@
-from youtube_transcript_api import YouTubeTranscriptApi
-from youtube_transcript_api.formatters import WebVTTFormatter
-import yt_dlp
+import json
 import os
 from pathlib import Path
-import webvtt
-import json
-import cv2
 
-from utils import str2time, maintain_aspect_ratio_resize, get_video_id_from_url
+import cv2
+import webvtt
+import yt_dlp
+from youtube_transcript_api import YouTubeTranscriptApi
+from youtube_transcript_api.formatters import WebVTTFormatter
+
+from utils import get_video_id_from_url, maintain_aspect_ratio_resize, str2time
 
 
 def download_video(video_url, path="/tmp/"):
@@ -109,4 +110,8 @@ def extract_and_save_frames_and_metadata(
 
 
 if __name__ == "__main__":
-    pass
+    vid1_url = "https://www.youtube.com/watch?v=OKJbaoIy9vk"
+    vid1_dir = "./data/videos"
+
+    vid1_filepath = download_video(vid1_url, vid1_dir)
+    vid1_transcript_filepath = get_transcript_vtt(vid1_url, vid1_dir)

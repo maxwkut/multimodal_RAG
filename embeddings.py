@@ -1,6 +1,6 @@
-from transformers import CLIPProcessor, CLIPModel
-from PIL import Image
 import torch
+from PIL import Image
+from transformers import CLIPModel, CLIPProcessor
 
 
 def get_joint_embedding(image_path: str, text: str):
