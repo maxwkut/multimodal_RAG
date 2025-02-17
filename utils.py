@@ -1,5 +1,7 @@
+import json
 
 import cv2
+from PIL import Image
 
 
 def get_video_id_from_url(video_url):
@@ -53,3 +55,22 @@ def maintain_aspect_ratio_resize(image, width=None, height=None, inter=cv2.INTER
 
     # Return the resized image
     return cv2.resize(image, dim, interpolation=inter)
+
+
+def load_json_file(file_path):
+    # Open the JSON file in read mode
+    with open(file_path, "r") as file:
+        data = json.load(file)
+    return data
+
+
+def display_retrieved_results(results):
+    print(f"There is/are {len(results)} retrieved result(s)")
+    print()
+    for i, res in enumerate(results):
+        print(
+            f'The caption of the {str(i+1)}-th retrieved result is:\n"{results[i].page_content}"'
+        )
+        print()
+        display(Image.open(results[i].metadata["extracted_frame_path"]))
+        print("------------------------------------------------------------")

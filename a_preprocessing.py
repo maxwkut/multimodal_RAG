@@ -111,7 +111,23 @@ def extract_and_save_frames_and_metadata(
 
 if __name__ == "__main__":
     vid1_url = "https://www.youtube.com/watch?v=OKJbaoIy9vk"
-    vid1_dir = "./data/videos"
+    vid1_dir = "data/videos"
 
     vid1_filepath = download_video(vid1_url, vid1_dir)
     vid1_transcript_filepath = get_transcript_vtt(vid1_url, vid1_dir)
+
+    # output paths to save extracted frames and their metadata
+    extracted_frames_path = os.path.join(vid1_dir, "extracted_frame")
+    metadatas_path = vid1_dir
+
+    # create these output folders if not existing
+    Path(extracted_frames_path).mkdir(parents=True, exist_ok=True)
+    Path(metadatas_path).mkdir(parents=True, exist_ok=True)
+
+    # call the function to extract frames and metadatas
+    metadatas = extract_and_save_frames_and_metadata(
+        vid1_filepath,
+        vid1_transcript_filepath,
+        extracted_frames_path,
+        metadatas_path,
+    )
