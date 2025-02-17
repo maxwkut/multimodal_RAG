@@ -23,3 +23,9 @@ The **Multimodal RAG (Retrieval-Augmented Generation)** app combines text, image
 
     uv pip install -r requirements.txt
 ```
+
+Formatting:
+```bash
+ruff check --select I --fix
+ruff format
+```
