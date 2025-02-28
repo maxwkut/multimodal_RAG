@@ -68,7 +68,9 @@ def get_text_embedding(text: str):
 
     if isinstance(text_embedding, torch.Tensor):
         embedding = text_embedding.detach().cpu().numpy()
-    return embedding[0]
+        return embedding[0]
+    else:
+        raise Exception
 
 
 def get_joint_embedding(image_path: str, text: str):
