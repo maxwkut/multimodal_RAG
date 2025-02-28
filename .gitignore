@@ -19,4 +19,7 @@ data/videos/
 .lancedb
 notebooks/.lancedb
 __pycache__
+<<<<<<< HEAD
 notebooks/.env
+=======
+>>>>>>> 861f5995f0f3d8eefcb2abfea80e66201e475feb
