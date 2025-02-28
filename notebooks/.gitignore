@@ -1,0 +1,11 @@
+# Ignore Jupyter Notebook checkpoints
+.ipynb_checkpoints/
+
+# Ignore notebook outputs (usually stored in the notebook itself)
+*.ipynb
+
+# Ignore output files if stored in a specific directory (optional)
+output/
+
+notebooks/.lancedb
+notebooks/.env
