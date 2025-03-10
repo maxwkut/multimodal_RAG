@@ -379,17 +379,17 @@ if __name__ == "__main__":
             
             # Video Source Section - Compact Version
             with gr.Column() as upload_section:
+                # Section title
+                gr.Markdown("## Video Source")
+                
+                # YouTube URL input and process button in the same row
                 with gr.Row():
                     with gr.Column(scale=10):
-                        with gr.Row():
-                            with gr.Column(scale=10):
-                                gr.Markdown("## Video Source")
-                        with gr.Row():
-                            youtube_url = gr.Textbox(
-                                label="YouTube URL", 
-                                placeholder="Enter a YouTube video URL",
-                                show_label=False
-                            )
+                        youtube_url = gr.Textbox(
+                            label="YouTube URL", 
+                            placeholder="Enter a YouTube video URL",
+                            show_label=False
+                        )
                     with gr.Column(scale=2):
                         process_btn = gr.Button("Process Video", size="lg")
                 
@@ -468,7 +468,7 @@ if __name__ == "__main__":
         process_btn.click(
             fn=on_process, 
             inputs=[youtube_url], 
-            outputs=[processing_status, table_name],
+            outputs=[processing_status, table_name, chatbot],
         )
         
         msg.submit(
