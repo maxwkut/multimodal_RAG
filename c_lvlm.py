@@ -311,6 +311,8 @@ if __name__ == "__main__":
         background-color: var(--openai-bg-light) !important;
         border-radius: 10px !important;
         border: 1px solid var(--openai-border) !important;
+        min-height: 500px;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
     }
     
     /* Chat messages */
@@ -320,8 +322,8 @@ if __name__ == "__main__":
     
     /* Processing status */
     #processing_status {
-        font-size: 18px;
-        margin: 15px 0;
+        font-size: 14px;
+        margin: 5px 0 15px 0;
     }
     
     /* Page sections */
@@ -341,6 +343,23 @@ if __name__ == "__main__":
     .gradio-container > div > .fixed {
         display: none !important;
     }
+    
+    /* Progress bar styling */
+    .progress-bar-container {
+        width: 100%;
+        height: 8px;
+        background-color: var(--openai-bg-light);
+        border-radius: 4px;
+        margin-top: 8px;
+        overflow: hidden;
+    }
+    
+    .progress-bar {
+        height: 100%;
+        background-color: var(--openai-accent);
+        border-radius: 4px;
+        transition: width 0.3s ease;
+    }
     """
     
     # Apply CSS to Blocks constructor 
@@ -357,26 +376,29 @@ if __name__ == "__main__":
                     </div>
                 """)
             
-            # Video Source Section - Full Width
+            # Video Source Section - Compact Version
             with gr.Column() as upload_section:
-                gr.Markdown("## Video Source")
-                
-                with gr.Column() as upload_form:
-                    with gr.Row():
-                        with gr.Column(scale=4):
+                with gr.Row():
+                    with gr.Column(scale=10):
+                        with gr.Row():
+                            with gr.Column(scale=5):
+                                gr.Markdown("## Video Source")
+                            with gr.Column(scale=5):
+                                title_markdown = gr.Markdown()
+                        with gr.Row():
                             youtube_url = gr.Textbox(
                                 label="YouTube URL", 
-                                placeholder="Enter a YouTube video URL"
+                                placeholder="Enter a YouTube video URL",
+                                show_label=False
                             )
-                        with gr.Column(scale=1):
-                            process_btn = gr.Button("Process Video")
-                    
-                    # Add an explicit progress indicator - replace with enhanced version
-                    gr.Markdown("### Processing Status")
-                    processing_status = gr.HTML(
-                        value="<div style='min-height: 60px; padding: 15px; margin: 10px 0; background-color: #1f1f1f; border-radius: 8px; font-size: 16px; text-align: center;'>Ready to process video</div>",
-                        elem_id="processing_status"
-                    )
+                    with gr.Column(scale=2):
+                        process_btn = gr.Button("Process Video", size="lg")
+                
+                # Compact processing status
+                processing_status = gr.HTML(
+                    value="<div style='min-height: 40px; padding: 8px; margin: 5px 0; background-color: #1f1f1f; border-radius: 6px; font-size: 14px; text-align: center;'>Ready to process video</div>",
+                    elem_id="processing_status"
+                )
             
             # Chat and Retrieved Content Sections - Two Columns
             with gr.Row():
@@ -445,19 +467,17 @@ if __name__ == "__main__":
         def on_clear():
             return "", [], None, "<div style='text-align:center; padding:50px 20px; color:#8e8ea0;'>No content retrieved yet. Process a video and ask a question to see retrieved frames and transcripts here.</div>"
         
-        # Event handlers
+        # Connect event handlers using the updated syntax for newer Gradio versions
         process_btn.click(
             fn=on_process, 
             inputs=[youtube_url], 
             outputs=[processing_status, table_name, title_markdown],
-            queue=True
         )
         
         msg.submit(
             fn=on_submit,
             inputs=[msg, chatbot, conversation_state, retrieved_content_html, table_name],
             outputs=[msg, chatbot, conversation_state, retrieved_content_html],
-            queue=True
         )
         
         clear.click(
@@ -465,5 +485,5 @@ if __name__ == "__main__":
             outputs=[msg, chatbot, conversation_state, retrieved_content_html],
         )
     
-    # Launch without CSS parameter
+    # Launch the app
     demo.queue().launch()

@@ -1,4 +1,6 @@
 import lancedb
+import time
+from tqdm import tqdm
 
 from embeddings import CLIPEmbeddings
 from multimodal_lancedb import MultimodalLanceDB
@@ -12,12 +14,14 @@ def load_and_transform_chunks(metadata_path: str):
     Args:
         metadata_path: str
     Returns:
+        tuple: (metadata, updated_transcripts, frame_paths)
     """
-
+    print("Loading video chunk metadata...")
     metadata = load_json_file(metadata_path)
     transcripts = [vid["transcript"] for vid in metadata]
     frame_paths = [vid["extracted_frame_path"] for vid in metadata]
 
+    print(f"Processing {len(metadata)} video chunks...")
     # Update transcripts to include n neighboring chunks
     n = 7
     updated_transcripts = [
@@ -45,11 +49,19 @@ def store_embeddings(
         frame_paths (str): Paths to where frames are stored
         table_name (str): Name of table in lancedb
     """
+    print(f"Connecting to LanceDB and preparing to embed {len(transcripts)} text-image pairs...")
+    start_time = time.time()
+    
     # Set up db connection
     db = lancedb.connect(".lancedb")
 
+    # Initialize the embedder - now model is loaded only once
     embedder = CLIPEmbeddings()
-
+    print("CLIP model loaded successfully")
+    
+    # Create a progress tracker message
+    print("Creating and storing embeddings (this might take a moment)...")
+    
     # Store embeddings in db
     _ = MultimodalLanceDB.from_text_image_pairs(
         texts=transcripts,
@@ -60,6 +72,13 @@ def store_embeddings(
         table_name=table_name,
         mode="overwrite",
     )
+    
+    end_time = time.time()
+    elapsed_time = end_time - start_time
+    
+    print(f"✓ Embeddings successfully stored in table '{table_name}'")
+    print(f"✓ Processing completed in {elapsed_time:.2f} seconds ({elapsed_time/len(transcripts):.2f} seconds per chunk)")
+    
     return
 
 
