@@ -20,7 +20,5 @@ data/images/
 data/videos/
 
 .lancedb
-notebooks/.lancedb
+*/.lancedb
 __pycache__
-<<<<<<< HEAD
-notebooks/.env
