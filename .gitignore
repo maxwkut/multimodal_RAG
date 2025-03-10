@@ -22,3 +22,5 @@ data/videos/
 .lancedb
 */.lancedb
 __pycache__
+
+uv.lock

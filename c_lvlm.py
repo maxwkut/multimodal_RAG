@@ -205,7 +205,6 @@ def gradio_chat(message, history, conversation_state=None, retrieved_content_htm
     return history + [[message, bot_message]], conversation_state, retrieved_content_html
 
 def process_youtube_video(youtube_url):
-    """Process a YouTube video and create a vector database for it with progress updates"""
     # Create a unique session ID for this video
     session_id = str(uuid.uuid4())[:8]
     table_name = f"video_{session_id}"
@@ -315,14 +314,9 @@ if __name__ == "__main__":
 
         # Process video function
         def on_process(url):
-            progress = gr.Progress()
-            new_table_name, video_title = process_youtube_video(url, progress)
+            new_table_name, video_title = process_youtube_video(url)
             
             title_markdown = f"**{video_title}**"
-            
-            # Set final progress based on processing result
-            if new_table_name is not None:
-                progress_status_text = "Processing complete! You can now chat with the video."
             
             return new_table_name, title_markdown
 
