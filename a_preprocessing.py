@@ -1,6 +1,7 @@
 import json
 import os
 from pathlib import Path
+import time
 
 import cv2
 import webvtt
@@ -14,7 +15,8 @@ from utils import get_video_id_from_url, maintain_aspect_ratio_resize, str2time
 def download_video(video_url, path="/tmp/"):
     # Define output template with filename pattern
     ydl_opts = {
-        "format": "bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]",
+        # Optimized for speed: Use a lower quality but faster to download
+        "format": "best[height<=480][ext=mp4]/best[height<=480]/best",
         "outtmpl": os.path.join(
             path, "%(title)s.%(ext)s"
         ),  # Use the provided path for the download
@@ -61,17 +63,34 @@ def extract_and_save_frames_and_metadata(
     path_to_transcript,
     path_to_save_extracted_frames,
     path_to_save_metadatas,
+    sample_rate=3,  # Only process every Nth transcript segment
 ):
     """This function extracts frames from a video at specified times based on a transcript,
     resizes and saves those frames, and stores metadata related to each frame in a JSON file.
+    Optimized for speed by processing fewer frames and using smaller frame sizes.
     """
+    start_time = time.time()
     metadata = []
     # load video and transcript
     video = cv2.VideoCapture(path_to_video)
     trans = webvtt.read(path_to_transcript)
-
-    # for each video segment specified in the transcript file
+    
+    # Calculate how many frames we'll extract (for logging)
+    total_segments = len(trans)
+    segments_to_process = len(range(0, total_segments, sample_rate))
+    print(f"Processing {segments_to_process} frames out of {total_segments} transcript segments")
+    
+    # for select video segments specified in the transcript file (using sample_rate)
+    processed_count = 0
     for idx, transcript in enumerate(trans):
+        # Skip frames based on sample_rate to speed up processing
+        if idx % sample_rate != 0:
+            continue
+            
+        processed_count += 1
+        if processed_count % 10 == 0:
+            print(f"Processed {processed_count}/{segments_to_process} frames")
+            
         start_time_ms = str2time(transcript.start)
         end_time_ms = str2time(transcript.end)
         mid_time_ms = (end_time_ms + start_time_ms) / 2
@@ -83,11 +102,13 @@ def extract_and_save_frames_and_metadata(
 
         if success:
             # if the frame is extracted successfully, resize it
-            image = maintain_aspect_ratio_resize(frame, height=350)
+            # Use a smaller height for faster processing
+            image = maintain_aspect_ratio_resize(frame, height=240)
             # save frame as JPEG file
             img_fname = f"frame_{idx}.jpg"
             img_fpath = os.path.join(path_to_save_extracted_frames, img_fname)
-            cv2.imwrite(img_fpath, image)
+            # Use JPEG quality parameter to reduce file size and improve write speed
+            cv2.imwrite(img_fpath, image, [cv2.IMWRITE_JPEG_QUALITY, 85])
 
             # prepare the metadata
             single_metadata = {
@@ -106,6 +127,10 @@ def extract_and_save_frames_and_metadata(
     fn = os.path.join(path_to_save_metadatas, "metadata.json")
     with open(fn, "w") as outfile:
         json.dump(metadata, outfile)
+        
+    end_time = time.time()
+    processing_time = end_time - start_time
+    print(f"Frame extraction completed in {processing_time:.2f} seconds. Extracted {len(metadata)} frames.")
     return metadata
 
 

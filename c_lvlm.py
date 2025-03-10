@@ -224,19 +224,20 @@ def process_youtube_video(youtube_url, progress=gr.Progress()):
         info_dict = ydl.extract_info(youtube_url, download=False)
         video_title = info_dict.get('title', 'Unknown Video')
     
-    progress(0.2, desc="Downloading video...")
+    progress(0.2, desc="Downloading video (optimized for speed)...")
     video_filepath = download_video(youtube_url, base_dir)
     
     progress(0.4, desc="Getting transcript...")
     transcript_filepath = get_transcript_vtt(youtube_url, base_dir)
 
-    progress(0.5, desc="Preprocessing video...")
-    # Preprocess
+    progress(0.5, desc="Extracting frames (optimized)...")
+    # Preprocess - using optimized sample rate to process fewer frames
     _ = extract_and_save_frames_and_metadata(
         video_filepath,
         transcript_filepath,
         extracted_frames_path,
         base_dir,
+        sample_rate=4  # Process every 4th frame to speed up extraction
     )
 
     metadata_path = os.path.join(base_dir, "metadata.json")
@@ -381,10 +382,8 @@ if __name__ == "__main__":
                 with gr.Row():
                     with gr.Column(scale=10):
                         with gr.Row():
-                            with gr.Column(scale=5):
+                            with gr.Column(scale=10):
                                 gr.Markdown("## Video Source")
-                            with gr.Column(scale=5):
-                                title_markdown = gr.Markdown()
                         with gr.Row():
                             youtube_url = gr.Textbox(
                                 label="YouTube URL", 
@@ -431,7 +430,6 @@ if __name__ == "__main__":
         # State variables
         table_name = gr.State(value=None)  # Table name for the processed video
         conversation_state = gr.State()  # Conversation history
-        title_markdown = gr.Markdown()
 
         # Process video function (updated to explicitly update processing status)
         def on_process(url, progress=gr.Progress()):
@@ -441,10 +439,9 @@ if __name__ == "__main__":
             
             try:
                 new_table_name, video_title = process_youtube_video(url, progress=progress)
-                title_text = f"**{video_title}**"
-                # Success status with green styling
-                processing_status_html = "<div style='min-height: 60px; padding: 15px; margin: 10px 0; background-color: #1f1f1f; border-radius: 8px; font-size: 16px; text-align: center;'><span style='font-size: 24px'>✅</span> <span style='font-size: 18px; font-weight: bold; color: #4CAF50;'>Video processed successfully!</span></div>"
-                yield processing_status_html, new_table_name, title_text
+                # Success status with green styling including the video title
+                processing_status_html = f"<div style='min-height: 60px; padding: 15px; margin: 10px 0; background-color: #1f1f1f; border-radius: 8px; font-size: 16px; text-align: center;'><span style='font-size: 24px'>✅</span> <span style='font-size: 18px; font-weight: bold; color: #4CAF50;'>Video processed successfully!</span><br/><span style='margin-top: 10px; display: block; font-weight: 500;'>{video_title}</span></div>"
+                yield processing_status_html, new_table_name, ""
             except Exception as e:
                 # Error status with red styling
                 processing_status_html = f"<div style='min-height: 60px; padding: 15px; margin: 10px 0; background-color: #1f1f1f; border-radius: 8px; font-size: 16px; text-align: center;'><span style='font-size: 24px'>❌</span> <span style='font-size: 18px; font-weight: bold; color: #F44336;'>Error processing video:</span><br/>{str(e)}</div>"
@@ -471,7 +468,7 @@ if __name__ == "__main__":
         process_btn.click(
             fn=on_process, 
             inputs=[youtube_url], 
-            outputs=[processing_status, table_name, title_markdown],
+            outputs=[processing_status, table_name],
         )
         
         msg.submit(
