@@ -10,6 +10,8 @@ wheels/
 .venv/
 
 .env
+*/.env
+
 # OS-specific files
 .DS_Store
 
