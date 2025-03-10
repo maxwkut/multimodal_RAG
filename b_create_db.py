@@ -28,8 +28,9 @@ def load_and_transform_chunks(metadata_path: str):
     ]
 
     # update transcripts in metadata
-    for i in enumerate(updated_transcripts):
+    for i, j in enumerate(metadata):
         metadata[i]["transcript"] = updated_transcripts[i]
+    
     return metadata, updated_transcripts, frame_paths
 
 

@@ -1,3 +1,4 @@
+
 # Ignore Jupyter Notebook checkpoints
 .ipynb_checkpoints/
 
@@ -6,9 +7,6 @@
 
 # Ignore output files if stored in a specific directory (optional)
 output/
-<<<<<<< HEAD
 
 notebooks/.lancedb
 notebooks/.env
-=======
->>>>>>> 861f5995f0f3d8eefcb2abfea80e66201e475feb
