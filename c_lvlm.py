@@ -204,11 +204,12 @@ def gradio_chat(message, history, conversation_state=None, retrieved_content_htm
     # Return in the format expected by Gradio chatbot (list of message pairs)
     return history + [[message, bot_message]], conversation_state, retrieved_content_html
 
-def process_youtube_video(youtube_url):
+def process_youtube_video(youtube_url, progress=gr.Progress()):
     # Create a unique session ID for this video
     session_id = str(uuid.uuid4())[:8]
     table_name = f"video_{session_id}"
     
+    progress(0, desc="Creating directories...")
     # Create directories for this session
     base_dir = f"data/videos/{session_id}"
     extracted_frames_path = os.path.join(base_dir, "extracted_frame")
@@ -217,14 +218,19 @@ def process_youtube_video(youtube_url):
     Path(base_dir).mkdir(parents=True, exist_ok=True)
     Path(extracted_frames_path).mkdir(parents=True, exist_ok=True)
 
+    progress(0.1, desc="Getting video info...")
     # Get video info to extract title
     with yt_dlp.YoutubeDL() as ydl:
         info_dict = ydl.extract_info(youtube_url, download=False)
         video_title = info_dict.get('title', 'Unknown Video')
     
+    progress(0.2, desc="Downloading video...")
     video_filepath = download_video(youtube_url, base_dir)
+    
+    progress(0.4, desc="Getting transcript...")
     transcript_filepath = get_transcript_vtt(youtube_url, base_dir)
 
+    progress(0.5, desc="Preprocessing video...")
     # Preprocess
     _ = extract_and_save_frames_and_metadata(
         video_filepath,
@@ -235,9 +241,11 @@ def process_youtube_video(youtube_url):
 
     metadata_path = os.path.join(base_dir, "metadata.json")
 
+    progress(0.7, desc="Creating vector database...")
     # Create vector database
     metadata, transcripts, frame_paths = load_and_transform_chunks(metadata_path)
     
+    progress(0.9, desc="Storing embeddings...")
     # Store embeddings
     store_embeddings(
         transcripts=transcripts,
@@ -245,66 +253,157 @@ def process_youtube_video(youtube_url):
         metadata=metadata,
         table_name=table_name
     )
+    
+    progress(1.0, desc="Done!")
     return table_name, video_title
 
 if __name__ == "__main__":
-    # Load CSS from external file
-    with open("style.css", "r") as f:
-        custom_css = f.read()
-
-    with gr.Blocks(title="VideoInsight AI", css=custom_css) as demo:
+    # Define custom CSS
+    css = """
+    /* OpenAI-inspired theme */
+    :root {
+        --openai-bg-dark: #0b0f19;
+        --openai-bg-light: #1e293b;
+        --openai-accent: #2563eb;
+        --openai-accent-light: #3b82f6;
+        --openai-text: #e2e8f0;
+        --openai-text-light: #f8fafc;
+        --openai-border: #334155;
+    }
+    
+    /* Overall appearance */
+    body, .gradio-container {
+        background-color: var(--openai-bg-dark);
+        color: var(--openai-text);
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    }
+    
+    /* Headers */
+    h1, h2, h3 {
+        color: var(--openai-text-light);
+        font-weight: 600;
+    }
+    
+    /* Input styling */
+    input, textarea, select, .gradio-textbox input, .gradio-dropdown div, .gradio-checkbox input {
+        background-color: var(--openai-bg-light) !important;
+        border: 1px solid var(--openai-border) !important;
+        border-radius: 6px !important;
+        color: var(--openai-text-light) !important;
+    }
+    
+    /* Button styling */
+    button, .gradio-button {
+        background-color: var(--openai-accent) !important;
+        color: white !important;
+        border: none !important;
+        border-radius: 6px !important;
+        padding: 8px 16px !important;
+        transition: background-color 0.3s ease !important;
+    }
+    
+    button:hover, .gradio-button:hover {
+        background-color: var(--openai-accent-light) !important;
+    }
+    
+    /* Chat container */
+    .gradio-chatbot {
+        background-color: var(--openai-bg-light) !important;
+        border-radius: 10px !important;
+        border: 1px solid var(--openai-border) !important;
+    }
+    
+    /* Chat messages */
+    .gradio-chatbot > div {
+        padding: 15px !important;
+    }
+    
+    /* Processing status */
+    #processing_status {
+        font-size: 18px;
+        margin: 15px 0;
+    }
+    
+    /* Page sections */
+    .gradio-column > div > .gradio-markdown:first-child h2 {
+        border-bottom: 1px solid var(--openai-border);
+        padding-bottom: 10px;
+        margin-bottom: 20px;
+        font-size: 20px;
+    }
+    
+    /* Hide default Gradio footer and settings */
+    footer {
+        display: none !important;
+    }
+    
+    /* Hide settings button */
+    .gradio-container > div > .fixed {
+        display: none !important;
+    }
+    """
+    
+    # Apply CSS to Blocks constructor 
+    with gr.Blocks(title="VideoInsight AI", theme=gr.themes.Base(), css=css) as demo:
         # demo.load()
         
-        with gr.Column(elem_classes="container"):
+        with gr.Column():
             # Header
-            with gr.Column(elem_classes="main-header"):
-                gr.Markdown("# VideoInsight AI", elem_classes="main-title")
-                gr.Markdown("Intelligent Video Analysis & Conversation System", elem_classes="subtitle")
+            with gr.Column() as header_section:
+                gr.HTML("""
+                    <div style="text-align: center; margin-bottom: 30px; padding-top: 20px;">
+                        <h1 style="font-size: 42px; font-weight: 600; margin-bottom: 8px; background: linear-gradient(90deg, #2563eb, #3b82f6); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">VideoInsight AI</h1>
+                        <p style="font-size: 18px; color: #94a3b8; max-width: 600px; margin: 0 auto;">Intelligent Video Analysis & Conversation System</p>
+                    </div>
+                """)
             
             # Video Source Section - Full Width
-            with gr.Column(elem_classes="card upload-card") as upload_section:
-                gr.Markdown("## Video Source", elem_classes="section-header")
+            with gr.Column() as upload_section:
+                gr.Markdown("## Video Source")
                 
                 with gr.Column() as upload_form:
                     with gr.Row():
                         with gr.Column(scale=4):
                             youtube_url = gr.Textbox(
                                 label="YouTube URL", 
-                                placeholder="Enter a YouTube video URL",
-                                elem_classes="input-box"
+                                placeholder="Enter a YouTube video URL"
                             )
                         with gr.Column(scale=1):
-                            process_btn = gr.Button("Process Video", elem_classes="process-btn")
+                            process_btn = gr.Button("Process Video")
+                    
+                    # Add an explicit progress indicator - replace with enhanced version
+                    gr.Markdown("### Processing Status")
+                    processing_status = gr.HTML(
+                        value="<div style='min-height: 60px; padding: 15px; margin: 10px 0; background-color: #1f1f1f; border-radius: 8px; font-size: 16px; text-align: center;'>Ready to process video</div>",
+                        elem_id="processing_status"
+                    )
             
             # Chat and Retrieved Content Sections - Two Columns
             with gr.Row():
                 # Left column - Chat
                 with gr.Column(scale=1):
                     # Chat section
-                    with gr.Column(elem_classes="card animate-fade-in chat-section"):
-                        gr.Markdown("## Chat with Video", elem_classes="section-header")
-                        chatbot = gr.Chatbot(height=500, elem_classes="chatbot-container")
+                    with gr.Column():
+                        gr.Markdown("## Chat with Video")
+                        chatbot = gr.Chatbot(height=500)
                         with gr.Row():
                             msg = gr.Textbox(
                                 label="Message", 
-                                placeholder="Ask a question about the video content...",
-                                elem_classes="input-box"
+                                placeholder="Ask a question about the video content..."
                             )
-                            clear = gr.Button("Clear", elem_classes="clear-btn")
+                            clear = gr.Button("Clear")
                 
                 # Right column - Retrieved content
-                with gr.Column(scale=1, elem_classes="retrieved-section"):
-                    with gr.Column(elem_classes="card animate-fade-in"):
-                        gr.Markdown("## Retrieved Content", elem_classes="section-header")
+                with gr.Column(scale=1):
+                    with gr.Column():
+                        gr.Markdown("## Retrieved Content")
                         retrieved_content_html = gr.HTML(
-                            value="<div style='text-align:center; padding:50px 20px; color:#8e8ea0;'>No content retrieved yet. Process a video and ask a question to see retrieved frames and transcripts here.</div>",
-                            elem_classes="retrieved-content"
+                            value="<div style='text-align:center; padding:50px 20px; color:#8e8ea0;'>No content retrieved yet. Process a video and ask a question to see retrieved frames and transcripts here.</div>"
                         )
             
             # Footer
             gr.Markdown(
-                "© 2025 Max Kutschinski", 
-                elem_classes="footer"
+                "© 2025 Max Kutschinski"
             )
         
         # State variables
@@ -312,21 +411,22 @@ if __name__ == "__main__":
         conversation_state = gr.State()  # Conversation history
         title_markdown = gr.Markdown()
 
-        # Process video function
-        def on_process(url):
-            new_table_name, video_title = process_youtube_video(url)
+        # Process video function (updated to explicitly update processing status)
+        def on_process(url, progress=gr.Progress()):
+            # Initial status with prominent styling
+            processing_status_html = "<div style='min-height: 60px; padding: 15px; margin: 10px 0; background-color: #1f1f1f; border-radius: 8px; font-size: 16px; text-align: center;'><span style='font-size: 24px'>🔄</span> <span style='font-size: 18px; font-weight: bold;'>Processing video...</span></div>"
+            yield processing_status_html, None, None
             
-            title_markdown = f"**{video_title}**"
-            
-            return new_table_name, title_markdown
-
-        
-        # Connect the process button
-        process_btn.click(
-            fn=on_process,
-            inputs=[youtube_url],
-            outputs=[table_name, title_markdown]
-        )
+            try:
+                new_table_name, video_title = process_youtube_video(url, progress=progress)
+                title_text = f"**{video_title}**"
+                # Success status with green styling
+                processing_status_html = "<div style='min-height: 60px; padding: 15px; margin: 10px 0; background-color: #1f1f1f; border-radius: 8px; font-size: 16px; text-align: center;'><span style='font-size: 24px'>✅</span> <span style='font-size: 18px; font-weight: bold; color: #4CAF50;'>Video processed successfully!</span></div>"
+                yield processing_status_html, new_table_name, title_text
+            except Exception as e:
+                # Error status with red styling
+                processing_status_html = f"<div style='min-height: 60px; padding: 15px; margin: 10px 0; background-color: #1f1f1f; border-radius: 8px; font-size: 16px; text-align: center;'><span style='font-size: 24px'>❌</span> <span style='font-size: 18px; font-weight: bold; color: #F44336;'>Error processing video:</span><br/>{str(e)}</div>"
+                yield processing_status_html, None, None
 
         # Define the submit event handler
         def on_submit(message, history, conversation_state, retrieved_content_html, table_name):
@@ -341,21 +441,29 @@ if __name__ == "__main__":
             )
             return "", new_history, new_state, new_retrieved_content or retrieved_content_html
         
-        # Connect the submit event
-        msg.submit(
-            fn=on_submit,
-            inputs=[msg, chatbot, conversation_state, retrieved_content_html, table_name],
-            outputs=[msg, chatbot, conversation_state, retrieved_content_html]
-        )
-        
         # Define the clear function
         def on_clear():
             return "", [], None, "<div style='text-align:center; padding:50px 20px; color:#8e8ea0;'>No content retrieved yet. Process a video and ask a question to see retrieved frames and transcripts here.</div>"
         
-        # Connect the clear button
+        # Event handlers
+        process_btn.click(
+            fn=on_process, 
+            inputs=[youtube_url], 
+            outputs=[processing_status, table_name, title_markdown],
+            queue=True
+        )
+        
+        msg.submit(
+            fn=on_submit,
+            inputs=[msg, chatbot, conversation_state, retrieved_content_html, table_name],
+            outputs=[msg, chatbot, conversation_state, retrieved_content_html],
+            queue=True
+        )
+        
         clear.click(
             fn=on_clear,
-            outputs=[msg, chatbot, conversation_state, retrieved_content_html]
+            outputs=[msg, chatbot, conversation_state, retrieved_content_html],
         )
     
-    demo.launch()
+    # Launch without CSS parameter
+    demo.queue().launch()
