@@ -69,6 +69,7 @@ if __name__ == "__main__":
     metadata, transcripts, frame_paths = load_and_transform_chunks(
         metadata_path="data/videos/metadata.json"
     )
+    
     store_embeddings(
         transcripts=transcripts,
         frame_paths=frame_paths,

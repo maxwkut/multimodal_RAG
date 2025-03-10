@@ -11,7 +11,7 @@ wheels/
 
 .env
 */.env
-
+.gradio/*
 # OS-specific files
 .DS_Store
 
